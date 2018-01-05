@@ -1,0 +1,6 @@
+---
+plugin-name: WarpsPro
+sqlite-dbname: WarpsPro
+wild-MaxX: "500"
+wild-MaxY: "500"
+...

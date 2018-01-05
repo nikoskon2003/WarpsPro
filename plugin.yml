@@ -1,0 +1,44 @@
+name: WarpsPro
+main: WarpsPro\WarpsPro
+author: nikoskon
+version: 1.0.0
+api: [3.0.0-ALPHA7, 3.0.0-ALPHA8, 3.0.0-ALPHA9, 3.0.0-ALPHA10]
+extensions: [sqlite3]
+commands:
+ wild:
+  description: Teleport to a random location in the world.
+  usage: "/wild"
+  permission: warpspro.command.wild
+ warp:
+  description: Warps you to a location /warp will list warps /warp <warpname> will teleport you.
+  usage: "/warp or /warp <warpname>"
+  permission: warpspro.command.tpahere
+ setwarp:
+  description: Sets a warp location.
+  usage: "/setwarp <warpname>"
+  permission: warpspro.command.setwarp
+ delwarp:
+  description: Delete a warp location.
+  usage: "/delwarp <warpname>"
+  permission: warpspro.command.delwarp
+permissions:
+ warpspro.*:
+  default: op
+  description: "Allows all warpspro commands"
+  children:
+   warpspro.command.*:
+    description: "Allows player to use commands"
+    default: op
+    children:
+     warpspro.command.delwarp:
+      description: "Allows player to delete warps"
+      default: op
+     warpspro.command.setwarp:
+      description: "Allows player to set warps"
+      default: op
+     warpspro.command.warp:
+      description: "Allows player use warps"
+      default: true
+     warpspro.command.wild:
+      description: "Allows player to teleport to a random location in world"
+      default: true
