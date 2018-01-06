@@ -339,16 +339,3 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
         $this->getLogger()->info("WarpsPro Disabled");
     }
 }
-/*Lang_invalid_usage: '§cINVALID USAGE:'
-Lang_no_permissions: '§c[WarpsPro] No permission.'
-Lang_command_only_use_ingame: '§cThis command can only be used in the game.'
-Land_chunk_not_loaded: '§cCould not load chunk It's not safe to teleport.'
-Lang_teleport_wild: '§aTeleported you some where wild.'
-Lang_warps: 'Warps:'
-Lang_no_warps: '§cThis server has no warps.'
-Lang_no_warp_listed: '§cThere is no warp by that name listed.'
-Lang_warp_set: '§aWarp set as'
-Lang_warp_to: '§aYou warped to:§f'
-Lang_warp_delete_1: '§aWarp named:§f'
-Lang_warp_delete_2: '§r§ahas been deleted.'
-Lang_no_warps_name: '§cNo Warps matching that name for this server.'*/
