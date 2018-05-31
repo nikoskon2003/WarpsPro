@@ -32,6 +32,8 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
     public $result;
     /** @var \SQLite3Stmt */
     public $prepare;
+	/** @var bool */
+	public $enable_wild;
 
     public function fetchall(){
         $row = array();
@@ -222,50 +224,58 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
                     }
                 break;
             case 'wild':
-                if (!$sender->hasPermission("warpspro.command.wild")) {
-                    $sender->sendMessage("§c[WarpsPro] No permission.");
-                    return true;
-                }
-                if ($sender instanceof Player)
-                {
-                    $this->world = $sender->getLevel()->getName();
-                    foreach($this->getServer()->getLevels() as $aval_world => $curr_world)
-                    {
-                        if ($this->world == $curr_world->getName())
-                        {
-                            $pos = $sender->getLevel()->getSafeSpawn(new Vector3(rand('-'.$this->config->get("wild-MaxX"), $this->config->get("wild-MaxX")),rand(70,100),rand('-'.$this->config->get("wild-MaxY"), $this->config->get("wild-MaxY"))));
-                                $pos->getLevel()->loadChunk($pos->getX(),$pos->getZ());
-                                $pos->getLevel()->getChunk($pos->getX(),$pos->getZ(),true);
-                                $pos->getLevel()->generateChunk($pos->getX(),$pos->getZ());
-                                $pos = $pos->getLevel()->getSafeSpawn(new Vector3($pos->getX(),rand(4,100),$pos->getZ()));
-                            if($pos->getLevel()->isChunkLoaded($pos->getX(),$pos->getZ()))
-                            {
-                                $sender->teleport($pos->getLevel()->getSafeSpawn(new Vector3($pos->getX(),rand(4,100),$pos->getZ())));
-                                $sender->sendMessage("§aTeleported you some where wild.");
-                                return true;
-                            }
-                            else
-                            {
-                                $sender->sendMessage("§cCould not load chunk.§fIt isn't safe to teleport.");
-                                return true;
-                            }
+				if($this->enable_wild === "true"){
+					if (!$sender->hasPermission("warpspro.command.wild")) {
+						$sender->sendMessage("§c[WarpsPro] No permission.");
+						return true;
+					}
+					if ($sender instanceof Player)
+					{
+						$this->world = $sender->getLevel()->getName();
+						foreach($this->getServer()->getLevels() as $aval_world => $curr_world)
+						{
+							if ($this->world == $curr_world->getName())
+							{
+								$pos = $sender->getLevel()->getSafeSpawn(new Vector3(rand('-'.$this->config->get("wild-MaxX"), $this->config->get("wild-MaxX")),rand(70,100),rand('-'.$this->config->get("wild-MaxY"), $this->config->get("wild-MaxY"))));
+									$pos->getLevel()->loadChunk($pos->getX(),$pos->getZ());
+									$pos->getLevel()->getChunk($pos->getX(),$pos->getZ(),true);
+									$pos->getLevel()->generateChunk($pos->getX(),$pos->getZ());
+									$pos = $pos->getLevel()->getSafeSpawn(new Vector3($pos->getX(),rand(4,100),$pos->getZ()));
+								if($pos->getLevel()->isChunkLoaded($pos->getX(),$pos->getZ()))
+								{
+									$sender->teleport($pos->getLevel()->getSafeSpawn(new Vector3($pos->getX(),rand(4,100),$pos->getZ())));
+									$sender->sendMessage("§aTeleported you some where wild.");
+									return true;
+								}
+								else
+								{
+									$sender->sendMessage("§cCould not load chunk.§fIt isn't safe to teleport.");
+									return true;
+								}
 
-                        }
-                    }
+							}
+						}
 
-                }
-                else
-                {
-                    $sender->sendMessage("§cThis command can only be used in the game.");
-                    return true;
-                }
-                break;
+					}
+					else
+					{
+						$sender->sendMessage("§cThis command can only be used in the game.");
+						return true;
+					}
+				}
+				else
+				{
+					$sender->sendMessage("§f/wild §cis not enabled in this Server!");
+					return true;
+				}
+				break;
+				
             default:
                 return false;
             }
             return false;
         }
-
+	//In future save in .yml not .db
     public function create_db(){
         $this->prepare = $this->db2->prepare("SELECT * FROM sqlite_master WHERE type='table' AND name='warps'");
         $this->result = $this->prepare->execute();
@@ -296,6 +306,11 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
             $this->config->set("sqlite-dbname", "WarpsPro");
             $this->config->save();
         }
+		if($this->config->get("enable-wild-command") == false)
+        {
+            $this->config->set("enable-wild-command", "true");
+            $this->config->save();
+        }
         if($this->config->get("wild-MaxX") == false)
         {
             $this->config->set("wild-MaxX", "300");
@@ -309,10 +324,10 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
     }
 
     public function onEnable(){
-        $this->getLogger()->info(TextFormat::GREEN."WarpsPro is loading...");
+        $this->getLogger()->info(TextFormat::GOLD."WarpsPro is loading...");
         @mkdir($this->getDataFolder());
         $this->check_config();
-        try{
+        try{ //In future, get .yml not .db
             if(!file_exists($this->getDataFolder().$this->config->get("sqlite-dbname").'.db')){
                 $this->db2 = new \SQLite3($this->getDataFolder().$this->config->get("sqlite-dbname").'.db', SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
             }else{
@@ -326,10 +341,10 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
             return;
         }
         $this->create_db();
-        $this->getLogger()->info(TextFormat::GREEN."[INFO] loading [".TextFormat::GOLD."config.yml".TextFormat::GREEN."]....");
-        $this->getLogger()->info(TextFormat::GREEN."[INFO] loading [".TextFormat::GOLD."config.yml".TextFormat::GREEN."] DONE");
-        $this->getLogger()->info(TextFormat::GREEN."WarpsPro loaded!");
+        $this->getLogger()->info(TextFormat::GREEN."WarpsPro has been loaded!");
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
+		
+		$this->enable_wild = $this->config->get("enable-wild-command");
     }
 
     public function onDisable(){
