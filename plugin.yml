@@ -2,7 +2,7 @@ name: WarpsPro
 main: WarpsPro\WarpsPro
 author: nikoskon
 version: 1.0.1
-api: [3.0.0-ALPHA7, 3.0.0-ALPHA8, 3.0.0-ALPHA9, 3.0.0-ALPHA10]
+api: [3.0.0]
 extensions: [sqlite3]
 commands:
  wild:
