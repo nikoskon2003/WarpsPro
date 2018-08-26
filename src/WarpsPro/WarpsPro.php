@@ -5,21 +5,18 @@ namespace WarpsPro;
 use pocketmine\command\Command;
 use pocketmine\command\CommandExecutor;
 use pocketmine\command\CommandSender;
-use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\Listener;
 use pocketmine\level\Position;
+use pocketmine\level\Level;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
-use pocketmine\utils\TextFormat;
 use pocketmine\utils\Config;
 use pocketmine\Server;
 
-class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
+class WarpsPro extends PluginBase implements CommandExecutor, Listener {
     /** @var \SQLite3 */
     private $db2;
-    /** @var string */
-    public $username;
     /** @var string */
     public $world;
     /** @var string */
@@ -47,10 +44,6 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
 
         }
         return $row;
-    }
-
-    public function onPlayerJoin(PlayerJoinEvent $event){
-        $player = $event->getPlayer();
     }
 
     public function onCommand(CommandSender $sender, Command $cmd, string $label, array $args) : bool{
@@ -226,7 +219,7 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
             case 'wild':
 				if($this->enable_wild === "true"){
 					if (!$sender->hasPermission("warpspro.command.wild")) {
-						$sender->sendMessage("§c[WarpsPro] No permission.");
+						$sender->sendMessage("§c[WarpsPro] §cNo permission.");
 						return true;
 					}
 					if ($sender instanceof Player)
@@ -239,12 +232,11 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
 								$pos = $sender->getLevel()->getSafeSpawn(new Vector3(rand('-'.$this->config->get("wild-MaxX"), $this->config->get("wild-MaxX")),rand(70,100),rand('-'.$this->config->get("wild-MaxY"), $this->config->get("wild-MaxY"))));
 									$pos->getLevel()->loadChunk($pos->getX(),$pos->getZ());
 									$pos->getLevel()->getChunk($pos->getX(),$pos->getZ(),true);
-									$pos->getLevel()->generateChunk($pos->getX(),$pos->getZ());
-									$pos = $pos->getLevel()->getSafeSpawn(new Vector3($pos->getX(),rand(4,100),$pos->getZ()));
+									$pos = $pos->getLevel()->getSafeSpawn(new Vector3($pos->getX(),rand(1,256),$pos->getZ()));
 								if($pos->getLevel()->isChunkLoaded($pos->getX(),$pos->getZ()))
 								{
-									$sender->teleport($pos->getLevel()->getSafeSpawn(new Vector3($pos->getX(),rand(4,100),$pos->getZ())));
-									$sender->sendMessage("§aTeleported you some where wild.");
+									$sender->teleport($pos);
+									$sender->sendMessage("§aTeleported you somewhere wild.");
 									return true;
 								}
 								else
@@ -290,7 +282,6 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
                       world TEXT,
                       title TEXT)");
             $this->result = $this->prepare->execute();
-            $this->getLogger()->info(TextFormat::AQUA."essentialsTP+ warps database created!");
         }
 
     }
@@ -308,7 +299,7 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
         }
 		if($this->config->get("enable-wild-command") == false)
         {
-            $this->config->set("enable-wild-command", "true");
+            $this->config->set("enable-wild-command", "false");
             $this->config->save();
         }
         if($this->config->get("wild-MaxX") == false)
@@ -324,7 +315,7 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
     }
 
     public function onEnable(){
-        $this->getLogger()->info(TextFormat::GOLD."WarpsPro is loading...");
+        $this->getLogger()->info("§6WarpsPro is loading...");
         @mkdir($this->getDataFolder());
         $this->check_config();
         try{ //In future, get .yml not .db
@@ -341,7 +332,7 @@ class WarpsPro extends PluginBase  implements CommandExecutor, Listener {
             return;
         }
         $this->create_db();
-        $this->getLogger()->info(TextFormat::GREEN."WarpsPro has been loaded!");
+        $this->getLogger()->info("§aWarpsPro has been loaded!");
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
 		
 		$this->enable_wild = $this->config->get("enable-wild-command");
