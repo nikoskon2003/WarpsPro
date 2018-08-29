@@ -1,7 +1,6 @@
 ---
 plugin-name: WarpsPro
-sqlite-dbname: WarpsPro
-enable-wild-command: "true"
-wild-MaxX: "500"
-wild-MaxY: "500"
+enable-wild-command: "false"
+wild-MaxX: "250"
+wild-MaxZ: "250"
 ...

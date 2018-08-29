@@ -3,47 +3,42 @@
 namespace WarpsPro;
 
 use pocketmine\command\Command;
-use pocketmine\command\CommandExecutor;
+//use pocketmine\command\CommandExecutor;
 use pocketmine\command\CommandSender;
-use pocketmine\event\Listener;
+
 use pocketmine\level\Position;
 use pocketmine\level\Level;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
+
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\Config;
 use pocketmine\Server;
 
-class WarpsPro extends PluginBase implements CommandExecutor, Listener {
-    /** @var \SQLite3 */
-    private $db2;
+class WarpsPro extends PluginBase{ //implements CommandExecutor{
+    /** @var Config */
+    public $warps;
+    /** @var int */
+    public $warp_id;
     /** @var string */
-    public $world;
-    /** @var string */
-    public $warp_loc;
+    public $warp_name;
     /** @var Position[] */
     public $config;
     /** @var int[] */
     public $player_cords;
-    /** @var \SQLite3Result */
-    public $result;
-    /** @var \SQLite3Stmt */
-    public $prepare;
+    /** @var string */
+    public $world;
 	/** @var bool */
-	public $enable_wild;
+    public $enable_wild;
+    
+    public function WarpID($name){
+        $data = $this->warps->getAll();
 
-    public function fetchall(){
-        $row = array();
-
-        $i = 0;
-
-        while($res = $this->result->fetchArray(SQLITE3_ASSOC)){
-
-            $row[$i] = $res;
-            $i++;
-
-        }
-        return $row;
+        for($i = 0; $i < count($data) + 1; $i++)
+            if(isset($data[$i]))
+                if($data[$i]["name"] == $name)
+                    return $i;
+        return -1;
     }
 
     public function onCommand(CommandSender $sender, Command $cmd, string $label, array $args) : bool{
@@ -57,43 +52,42 @@ class WarpsPro extends PluginBase implements CommandExecutor, Listener {
                 {
                     if (count($args) == 0)
                     {
-                        $this->prepare = $this->db2->prepare("SELECT x,y,z,world,title FROM warps");
-                        $this->result = $this->prepare->execute();
-                        $sql          = $this->fetchall();
                         $warp_list = null;
-                        foreach ($sql as $ptu)
-                        {
-                            $warp_list .= '§a[§f' . $ptu['title'] . '§a]';
-                        }
+                        $data = $this->warps->getAll();
+
+                        for($i = 0; $i < count($data) + 1; $i++)
+                            if(isset($data[$i]))
+                                $warp_list .= '§a[§f' . $data[$i]["name"] . '§a]';
                         if($warp_list != null){
-                            $sender->sendMessage("Warps: " . $warp_list);
+                            $sender->sendMessage("§fWarps: " . $warp_list);
                             return true;
                         }else{
                             $sender->sendMessage("§cThis server has no warps.");
                             return true;
                         }
-
                     }else{
-                        $this->warp_loc = $args[0];
-                        $this->prepare = $this->db2->prepare("SELECT title,x,y,z,world FROM warps WHERE title = :title");
-                        $this->prepare->bindValue(":title", $this->warp_loc, SQLITE3_TEXT);
-                        $this->result = $this->prepare->execute();
-                        $sql          = $this->fetchall();
-						if(count($sql) > 0){
-							$sql = $sql[0];
-								if(isset($sql['world'])){
-									if(Server::getInstance()->loadLevel($sql['world']) != false){
-										$curr_world = Server::getInstance()->getLevelByName($sql['world']);
-										$pos = new Position((int) $sql['x'], (int) $sql['y'], (int) $sql['z'], $curr_world);
-										$sender->sendMessage("§aYou warped to:§f " . $sql['title']);
-										$sender->teleport($pos);
-										return true;
-									}else{
-										$sender->sendMessage("§cCould not load chunk.§f It's not safe to teleport.");
-										return true;
-									}
-								}
+                        $this->warp_name = $args[0];
+                        $this->warp_id = $this->WarpID($this->warp_name);
+                        $data = $this->warps->getAll();
 
+                        if($this->warp_id <= -1){
+                            $sender->sendMessage("§cThere is no warp by that name listed.");
+							return true;
+                        }
+						if(isset($data[$this->warp_id])){
+                            if(Server::getInstance()->loadLevel($data[$this->warp_id]["world"]) != false){
+                                $curr_world = Server::getInstance()->getLevelByName($data[$this->warp_id]["world"]);
+                                $pos = new Position((int)$data[$this->warp_id]["x"],
+                                                    (int)$data[$this->warp_id]["y"],
+                                                    (int)$data[$this->warp_id]["z"], $curr_world);
+
+                                $sender->sendMessage("§aYou warped to:§f " . $this->warp_name);
+                                $sender->teleport($pos);
+                                return true;
+                            }else{
+                                $sender->sendMessage("§cCould not load chunk.§f It's not safe to teleport there.");
+                                return true;
+                            }
 						}else{
 							$sender->sendMessage("§cThere is no warp by that name listed.");
 							return true;
@@ -102,71 +96,61 @@ class WarpsPro extends PluginBase implements CommandExecutor, Listener {
                 } else{
 					if (count($args) == 0)
                     {
-                        $this->prepare = $this->db2->prepare("SELECT x,y,z,world,title FROM warps");
-                        $this->result = $this->prepare->execute();
-                        $sql          = $this->fetchall();
                         $warp_list = null;
-                        foreach ($sql as $ptu)
-                        {
-                            $warp_list .= '§a[§f' . $ptu['title'] . '§a]';
-                        }
+                        $data = $this->warps->getAll();
+ 
+                        for($i = 0; $i < count($data) + 1; $i++)
+                            if(isset($data[$i]))
+                                $warp_list .= '§a[§f' . $data[$i]["name"] . '§a]';
                         if($warp_list != null){
-                            $sender->sendMessage("Warps: " . $warp_list);
+                            $sender->sendMessage("§6[WarpsPro] §fWarps: " . $warp_list);
                             return true;
                         }else{
-                            $sender->sendMessage("§cThis server has no warps.");
+                            $sender->sendMessage("§6[WarpsPro] §cThis server has no warps.");
                             return true;
                         }
                     }else{
-						$sender->sendMessage("§cThis command can only be used in the game.");
+						$sender->sendMessage("§cThis command can only be used in-game.");
 						return true;
 					}
                 }
                 break;
             case 'setwarp':
                 if (!$sender->hasPermission("warpspro.command.setwarp")) {
-                    $sender->sendMessage("§c[WarpsPro] No permission.");
+                    $sender->sendMessage("§cYou don't have permission.");
                     return true;
                 }
                 if ($sender instanceof Player)
                 {
-                    if (!$sender->hasPermission("warpspro.command.setwarp")) {
-                        $sender->sendMessage("§c[WarpsPro] No permission.");
-                        return true;
-                    }
-
                     if((count($args) != 0) && (count($args) < 2))
                     {
+                        $data = $this->warps->getAll();
+                        if($this->WarpID($args[0]) > -1){
+                            $sender->sendMessage("§cWarp already exists!");
+                            return true;
+                        }
+
                         $this->player_cords = array('x' => (int) $sender->getX(),'y' => (int) $sender->getY(),'z' => (int) $sender->getZ());
                         $this->world = $sender->getLevel()->getName();
-                        $this->warp_loc = $args[0];
-                        $this->prepare = $this->db2->prepare("SELECT title,x,y,z,world FROM warps WHERE title = :title");
-                        $this->prepare->bindValue(":title", $this->warp_loc, SQLITE3_TEXT);
-                        $this->result = $this->prepare->execute();
-                        $sql          = $this->fetchall();
-                        if( count($sql) > 0 )
-                        {
-                            $sql = $sql[0];
-                            $this->prepare = $this->db2->prepare("UPDATE warps SET world = :world, title = :title, x = :x, y = :y, z = :z WHERE title = :title");
-                            $this->prepare->bindValue(":title", $this->warp_loc, SQLITE3_TEXT);
-                            $this->prepare->bindValue(":world", $this->world, SQLITE3_TEXT);
-                            $this->prepare->bindValue(":x", $this->player_cords['x'], SQLITE3_TEXT);
-                            $this->prepare->bindValue(":y", $this->player_cords['y'], SQLITE3_TEXT);
-                            $this->prepare->bindValue(":z", $this->player_cords['z'], SQLITE3_TEXT);
-                            $this->result = $this->prepare->execute();
+                        $this->warp_name = $args[0];
+                        $this->warp_id = count($data);
 
+                        if(isset($data[$this->warp_id])){
+                            $this->warp_id++;
+                            if(isset($data[$this->warp_id])){
+                                $sender->sendMessage("§cThere is a problem with §fwarps.yml§c. A manual reset must be made!");
+                                return true;
+                            }
                         }
-                        else
-                        {
-                            $this->prepare = $this->db2->prepare("INSERT INTO warps (title, world, x, y, z) VALUES (:title, :world, :x, :y, :z)");
-                            $this->prepare->bindValue(":title", $this->warp_loc, SQLITE3_TEXT);
-                            $this->prepare->bindValue(":world", $this->world, SQLITE3_TEXT);
-                            $this->prepare->bindValue(":x", $this->player_cords['x'], SQLITE3_TEXT);
-                            $this->prepare->bindValue(":y", $this->player_cords['y'], SQLITE3_TEXT);
-                            $this->prepare->bindValue(":z", $this->player_cords['z'], SQLITE3_TEXT);
-                            $this->result = $this->prepare->execute();
+                        
+                        $data[$this->warp_id]["world"] = $this->world;
+                        $data[$this->warp_id]["x"] = $this->player_cords["x"];
+                        $data[$this->warp_id]["y"] = $this->player_cords["y"];
+                        $data[$this->warp_id]["z"] = $this->player_cords["z"];
+                        $data[$this->warp_id]["name"] = $this->warp_name;
 
-                        }
+                        $this->warps->setAll($data);
+                        $this->warps->save();
 
                         $sender->sendMessage("§aWarp set as:§r " . $args[0]);
                         return true;
@@ -179,47 +163,59 @@ class WarpsPro extends PluginBase implements CommandExecutor, Listener {
                 }
                 else
                 {
-                    $sender->sendMessage("§cThis command can only be used in the game.");
+                    $sender->sendMessage("§cThis command can only be used in-game.");
                     return true;
                 }
                 break;
             case 'delwarp':
                 if (!$sender->hasPermission("warpspro.command.delwarp")) {
-                    $sender->sendMessage("§c[WarpsPro] No permission.");
+                    $sender->sendMessage("§cYou don't have permission.");
                     return true;
                 }
                 if((count($args) != 0) && (count($args) < 2))
                 {
+                    $data = $this->warps->getAll();
+                    $this->warp_name = $args[0];
+                    $this->warp_id = $this->WarpID($this->warp_name);
 
-                    $this->warp_loc = $args[0];
-                    $this->prepare = $this->db2->prepare("SELECT * FROM warps WHERE title = :title");
-                    $this->prepare->bindValue(":title", $this->warp_loc, SQLITE3_TEXT);
-                    $this->result = $this->prepare->execute();
-                    $sql          = $this->fetchall();
-                    if( count($sql) > 0 )
+                    if($this->warp_id <= -1){
+                        $sender->sendMessage("§cNo warps with that name in this server.");
+                        return true;
+                    }
+                    
+                    if(isset($data[$this->warp_id]))
                     {
-                        $this->prepare = $this->db2->prepare("DELETE FROM warps WHERE title = :title");
-                        $this->prepare->bindValue(":title", $this->warp_loc, SQLITE3_TEXT);
-                        $this->result = $this->prepare->execute();
-                        $sender->sendMessage("§aWarp named:§f " . $this->warp_loc . " §r§a,has been deleted.");
-                        return true;
+                        unset($data[$this->warp_id]);
+
+                        $rtarray = [];
+
+                        for($i = 0; $i < count($data) + count($data); $i++){
+                            if(isset($data[$i]))
+                                $rtarray[] = $data[$i];
                         }
-                        else
-                        {
-                        $sender->sendMessage("§cNo Warps matching that name for this server.");
+                        //print_r($rtarray); //use this for debugging!
+                        $this->warps->setAll($rtarray);
+                        $this->warps->save();
+
+                        $sender->sendMessage("§aWarp [§f" . $this->warp_name . "§r§a] has been deleted.");
                         return true;
-                        }
                     }
                     else
                     {
-                        $sender->sendMessage("§cINVALID USAGE!");
-                        return false;
+                        $sender->sendMessage("§cNo warps with that name in this server.");
+                        return true;
                     }
+                }
+                else
+                {
+                    $sender->sendMessage("§cINVALID USAGE!");
+                    return false;
+                }
                 break;
             case 'wild':
 				if($this->enable_wild === "true"){
 					if (!$sender->hasPermission("warpspro.command.wild")) {
-						$sender->sendMessage("§c[WarpsPro] §cNo permission.");
+						$sender->sendMessage("§cYou don't have permission.");
 						return true;
 					}
 					if ($sender instanceof Player)
@@ -229,7 +225,7 @@ class WarpsPro extends PluginBase implements CommandExecutor, Listener {
 						{
 							if ($this->world == $curr_world->getName())
 							{
-								$pos = $sender->getLevel()->getSafeSpawn(new Vector3(rand('-'.$this->config->get("wild-MaxX"), $this->config->get("wild-MaxX")),rand(70,100),rand('-'.$this->config->get("wild-MaxY"), $this->config->get("wild-MaxY"))));
+								$pos = $sender->getLevel()->getSafeSpawn(new Vector3(rand('-'.$this->config->get("wild-MaxX"), $this->config->get("wild-MaxX")),rand(1,256),rand('-'.$this->config->get("wild-MaxZ"), $this->config->get("wild-MaxZ"))));
 									$pos->getLevel()->loadChunk($pos->getX(),$pos->getZ());
 									$pos->getLevel()->getChunk($pos->getX(),$pos->getZ(),true);
 									$pos = $pos->getLevel()->getSafeSpawn(new Vector3($pos->getX(),rand(1,256),$pos->getZ()));
@@ -241,7 +237,7 @@ class WarpsPro extends PluginBase implements CommandExecutor, Listener {
 								}
 								else
 								{
-									$sender->sendMessage("§cCould not load chunk.§fIt isn't safe to teleport.");
+									$sender->sendMessage("§cCould not load chunk. §fIt isn't safe to teleport there.");
 									return true;
 								}
 
@@ -251,7 +247,7 @@ class WarpsPro extends PluginBase implements CommandExecutor, Listener {
 					}
 					else
 					{
-						$sender->sendMessage("§cThis command can only be used in the game.");
+						$sender->sendMessage("§cThis command can only be used in-game.");
 						return true;
 					}
 				}
@@ -267,81 +263,35 @@ class WarpsPro extends PluginBase implements CommandExecutor, Listener {
             }
             return false;
         }
-	//In future save in .yml not .db
-    public function create_db(){
-        $this->prepare = $this->db2->prepare("SELECT * FROM sqlite_master WHERE type='table' AND name='warps'");
-        $this->result = $this->prepare->execute();
-        $sql = $this->fetchall();
-        $count = count($sql);
-        if($count == 0){
-            $this->prepare = $this->db2->prepare("CREATE TABLE warps (
-                      id INTEGER PRIMARY KEY,
-                      x TEXT,
-                      y TEXT,
-                      z TEXT,
-                      world TEXT,
-                      title TEXT)");
-            $this->result = $this->prepare->execute();
-        }
-
-    }
 
     public function check_config(){
         $this->saveDefaultConfig();
-        $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML, array());
+
+        $defaults = [
+            "plugin-name" => "WarpsPro",
+            "enable-wild-command" => false,
+            "wild-MaxX" => 250,
+            "wild-MaxZ" => 250
+        ];
+
+        $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML, $defaults);
         $this->config->set('plugin-name',"WarpsPro");
         $this->config->save();
-
-        if(!$this->config->get("sqlite-dbname"))
-        {
-            $this->config->set("sqlite-dbname", "WarpsPro");
-            $this->config->save();
-        }
-		if($this->config->get("enable-wild-command") == false)
-        {
-            $this->config->set("enable-wild-command", "false");
-            $this->config->save();
-        }
-        if($this->config->get("wild-MaxX") == false)
-        {
-            $this->config->set("wild-MaxX", "300");
-            $this->config->save();
-        }
-        if($this->config->get("wild-MaxY") == false)
-        {
-            $this->config->set("wild-MaxY", "300");
-            $this->config->save();
-        }
     }
 
     public function onEnable(){
-        $this->getLogger()->info("§6WarpsPro is loading...");
+        $this->getLogger()->info("§6WarpsPro §bis loading...");
         @mkdir($this->getDataFolder());
+        $this->saveResource("warps.yml");
+        $this->warps = new Config($this->getDataFolder() . "warps.yml", Config::YAML);
         $this->check_config();
-        try{ //In future, get .yml not .db
-            if(!file_exists($this->getDataFolder().$this->config->get("sqlite-dbname").'.db')){
-                $this->db2 = new \SQLite3($this->getDataFolder().$this->config->get("sqlite-dbname").'.db', SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
-            }else{
-                $this->db2 = new \SQLite3($this->getDataFolder().$this->config->get("sqlite-dbname").'.db', SQLITE3_OPEN_READWRITE);
-            }
-        }
-        catch (\Throwable $e)
-        {
-            $this->getLogger()->critical($e->getMessage());
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-            return;
-        }
-        $this->create_db();
-        $this->getLogger()->info("§aWarpsPro has been loaded!");
-        $this->getServer()->getPluginManager()->registerEvents($this, $this);
-		
+
+        $this->getLogger()->info("§6WarpsPro §ahas been loaded!");
 		$this->enable_wild = $this->config->get("enable-wild-command");
     }
 
     public function onDisable(){
-        if($this->prepare){
-            $this->prepare->close();
-        }
-        $this->getLogger()->info("WarpsPro Disabled");
+        $this->warps->save();
+        $this->getLogger()->info("§6WarpsPro §cdisabled");
     }
 }
