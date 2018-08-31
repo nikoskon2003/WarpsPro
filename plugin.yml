@@ -1,7 +1,7 @@
 name: WarpsPro
 main: WarpsPro\WarpsPro
 author: nikoskon
-version: 1.1.0
+version: 1.1.1
 api: [3.0.0]
 commands:
  wild:
@@ -11,7 +11,7 @@ commands:
  warp:
   description: Warps you to a location. /warp will list all warps. /warp <warpname> will teleport you.
   usage: "/warp or /warp <warpname>"
-  permission: warpspro.command.tpahere
+  permission: warpspro.command.warp
  setwarp:
   description: Sets a warp on current location.
   usage: "/setwarp <warpname>"
