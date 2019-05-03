@@ -3,7 +3,6 @@
 namespace WarpsPro;
 
 use pocketmine\command\Command;
-//use pocketmine\command\CommandExecutor;
 use pocketmine\command\CommandSender;
 
 use pocketmine\level\Position;
@@ -15,7 +14,8 @@ use pocketmine\plugin\PluginBase;
 use pocketmine\utils\Config;
 use pocketmine\Server;
 
-class WarpsPro extends PluginBase{ //implements CommandExecutor{
+class WarpsPro extends PluginBase
+{
     /** @var Config */
     public $warps;
     /** @var int */
@@ -31,21 +31,31 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
 	/** @var bool */
     public $enable_wild;
     
-    public function WarpID($name){
+    public function WarpID($name)
+    {
         $data = $this->warps->getAll();
 
         for($i = 0; $i < count($data) + 1; $i++)
+        {
             if(isset($data[$i]))
+            {
                 if($data[$i]["name"] == $name)
+                {
                     return $i;
+                }
+            }     
+        }   
         return -1;
     }
 
-    public function onCommand(CommandSender $sender, Command $cmd, string $label, array $args) : bool{
-        switch($cmd->getName()){
+    public function onCommand(CommandSender $sender, Command $cmd, string $label, array $args) : bool
+    {
+        switch($cmd->getName())
+        {
             case 'warp':
-                if (!$sender->hasPermission("warpspro.command.warp")) {
-                    $sender->sendMessage("§c[WarpsPro] No permission.");
+                if (!$sender->hasPermission("warpspro.command.warp"))
+                {
+                    $sender->sendMessage("§cYou don't have permission.");
                     return true;
                 }
                 if ($sender instanceof Player)
@@ -56,67 +66,105 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
                         $data = $this->warps->getAll();
 
                         for($i = 0; $i < count($data) + 1; $i++)
-                            if(isset($data[$i]))
+                        {
+                            if(isset($data[$i]) && $sender->hasPermission("warpspro.command.warp." . $data[$i]["name"]))
+                            {
                                 $warp_list .= '§a[§f' . $data[$i]["name"] . '§a]';
-                        if($warp_list != null){
+                            }
+                        }
+
+                        if($warp_list != null)
+                        {
                             $sender->sendMessage("§fWarps: " . $warp_list);
                             return true;
-                        }else{
+                        }
+                        else
+                        {
                             $sender->sendMessage("§cThis server has no warps.");
                             return true;
                         }
-                    }else{
+                    }
+                    else
+                    {
                         $this->warp_name = $args[0];
                         $this->warp_id = $this->WarpID($this->warp_name);
                         $data = $this->warps->getAll();
 
-                        if($this->warp_id <= -1){
+                        if($this->warp_id <= -1)
+                        {
                             $sender->sendMessage("§cThere is no warp by that name listed.");
 							return true;
                         }
-						if(isset($data[$this->warp_id])){
-                            if(Server::getInstance()->loadLevel($data[$this->warp_id]["world"]) != false){
+                        if(isset($data[$this->warp_id]))
+                        {
+                            if(!$sender->hasPermission("warpspro.command.warp." . $this->warp_name))
+                            {
+                                $sender->sendMessage("§cYou don't have permission to warp to " . $this->warp_name . "§c!");
+                                return true;
+                            }
+
+                            if(Server::getInstance()->loadLevel($data[$this->warp_id]["world"]) != false)
+                            {
                                 $curr_world = Server::getInstance()->getLevelByName($data[$this->warp_id]["world"]);
-                                $pos = new Position((int)$data[$this->warp_id]["x"],
-                                                    (int)$data[$this->warp_id]["y"],
-                                                    (int)$data[$this->warp_id]["z"], $curr_world);
+                                $pos = new Position(
+                                    $data[$this->warp_id]["x"],
+                                    $data[$this->warp_id]["y"],
+                                    $data[$this->warp_id]["z"], $curr_world
+                                );
 
                                 $sender->sendMessage("§aYou warped to:§f " . $this->warp_name);
                                 $sender->teleport($pos);
                                 return true;
-                            }else{
+                            }
+                            else
+                            {
                                 $sender->sendMessage("§cCould not load chunk.§f It's not safe to teleport there.");
                                 return true;
                             }
-						}else{
+                        }
+                        else
+                        {
 							$sender->sendMessage("§cThere is no warp by that name listed.");
 							return true;
 						}
                     }
-                } else{
+                } 
+                else
+                {
 					if (count($args) == 0)
                     {
                         $warp_list = null;
                         $data = $this->warps->getAll();
  
                         for($i = 0; $i < count($data) + 1; $i++)
+                        {
                             if(isset($data[$i]))
+                            {
                                 $warp_list .= '§a[§f' . $data[$i]["name"] . '§a]';
-                        if($warp_list != null){
-                            $sender->sendMessage("§6[WarpsPro] §fWarps: " . $warp_list);
-                            return true;
-                        }else{
-                            $sender->sendMessage("§6[WarpsPro] §cThis server has no warps.");
+                            }
+                        }
+                            
+                        if($warp_list != null)
+                        {
+                            $sender->sendMessage("§fWarps: " . $warp_list);
                             return true;
                         }
-                    }else{
+                        else
+                        {
+                            $sender->sendMessage("§cThis server has no warps.");
+                            return true;
+                        }
+                    }
+                    else
+                    {
 						$sender->sendMessage("§cThis command can only be used in-game.");
 						return true;
 					}
                 }
                 break;
             case 'setwarp':
-                if (!$sender->hasPermission("warpspro.command.setwarp")) {
+                if (!$sender->hasPermission("warpspro.command.setwarp")) 
+                {
                     $sender->sendMessage("§cYou don't have permission.");
                     return true;
                 }
@@ -125,19 +173,22 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
                     if((count($args) != 0) && (count($args) < 2))
                     {
                         $data = $this->warps->getAll();
-                        if($this->WarpID($args[0]) > -1){
+                        if($this->WarpID($args[0]) > -1)
+                        {
                             $sender->sendMessage("§cWarp already exists!");
                             return true;
                         }
 
-                        $this->player_cords = array('x' => (int) $sender->getX(),'y' => (int) $sender->getY(),'z' => (int) $sender->getZ());
+                        $this->player_cords = array('x' => $sender->getX(), 'y' => $sender->getY(), 'z' => $sender->getZ());
                         $this->world = $sender->getLevel()->getName();
                         $this->warp_name = $args[0];
                         $this->warp_id = count($data);
 
-                        if(isset($data[$this->warp_id])){
+                        if(isset($data[$this->warp_id]))
+                        {
                             $this->warp_id++;
-                            if(isset($data[$this->warp_id])){
+                            if(isset($data[$this->warp_id]))
+                            {
                                 $sender->sendMessage("§cThere is a problem with §fwarps.yml§c. A manual reset must be made!");
                                 return true;
                             }
@@ -168,7 +219,8 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
                 }
                 break;
             case 'delwarp':
-                if (!$sender->hasPermission("warpspro.command.delwarp")) {
+                if (!$sender->hasPermission("warpspro.command.delwarp")) 
+                {
                     $sender->sendMessage("§cYou don't have permission.");
                     return true;
                 }
@@ -178,8 +230,9 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
                     $this->warp_name = $args[0];
                     $this->warp_id = $this->WarpID($this->warp_name);
 
-                    if($this->warp_id <= -1){
-                        $sender->sendMessage("§cNo warps with that name in this server.");
+                    if($this->warp_id <= -1)
+                    {
+                        $sender->sendMessage("§cThere is no warp by that name listed.");
                         return true;
                     }
                     
@@ -189,11 +242,12 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
 
                         $rtarray = [];
 
-                        for($i = 0; $i < count($data) + count($data); $i++){
-                            if(isset($data[$i]))
+                        for($i = 0; $i < count($data) + count($data); $i++)
+                        {
+                            if(isset($data[$i])){
                                 $rtarray[] = $data[$i];
+                            }
                         }
-                        //print_r($rtarray); //use this for debugging!
                         $this->warps->setAll($rtarray);
                         $this->warps->save();
 
@@ -202,7 +256,7 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
                     }
                     else
                     {
-                        $sender->sendMessage("§cNo warps with that name in this server.");
+                        $sender->sendMessage("§cThere is no warp by that name listed.");
                         return true;
                     }
                 }
@@ -213,8 +267,10 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
                 }
                 break;
             case 'wild':
-				if($this->enable_wild === "true"){
-					if (!$sender->hasPermission("warpspro.command.wild")) {
+                if($this->enable_wild === "true")
+                {
+                    if (!$sender->hasPermission("warpspro.command.wild")) 
+                    {
 						$sender->sendMessage("§cYou don't have permission.");
 						return true;
 					}
@@ -232,7 +288,7 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
 								if($pos->getLevel()->isChunkLoaded($pos->getX(),$pos->getZ()))
 								{
 									$sender->teleport($pos);
-									$sender->sendMessage("§aTeleported you somewhere wild.");
+									$sender->sendMessage("§aTeleported you somewhere in the wild.");
 									return true;
 								}
 								else
@@ -260,11 +316,13 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
 				
             default:
                 return false;
-            }
-            return false;
+            break;
         }
+        return false;
+    }
 
-    public function check_config(){
+    public function check_config()
+    {
         $this->saveDefaultConfig();
 
         $defaults = [
@@ -279,7 +337,8 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
         $this->config->save();
     }
 
-    public function onEnable(){
+    public function onEnable()
+    {
         $this->getLogger()->info("§6WarpsPro §bis loading...");
         @mkdir($this->getDataFolder());
         $this->saveResource("warps.yml");
@@ -290,7 +349,8 @@ class WarpsPro extends PluginBase{ //implements CommandExecutor{
 		$this->enable_wild = $this->config->get("enable-wild-command");
     }
 
-    public function onDisable(){
+    public function onDisable()
+    {
         $this->warps->save();
         $this->getLogger()->info("§6WarpsPro §cdisabled");
     }
