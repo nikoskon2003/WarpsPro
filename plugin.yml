@@ -1,7 +1,7 @@
 name: WarpsPro
-main: WarpsPro\WarpsPro
+main: nikoskon\WarpsPro\WarpsPro
 author: nikoskon
-version: 1.2.0
+version: 1.2.1
 api: [3.0.0]
 commands:
  wild:
