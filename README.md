@@ -3,7 +3,7 @@
 # WarpsPro
 A simple warp plugin for PocketMine-MP
 
-# FEAUTURES
+# FEATURES
   - /warp \[warp name\]
     * If you don't input any arguments it will dispaly all the server's warps.
     * Inputing a name after the command, will teleport you in the warp. Example: **/warp shop**
