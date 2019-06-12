@@ -1,6 +1,4 @@
 ---
 plugin-name: WarpsPro
-enable-wild-command: "false"
-wild-MaxX: "250"
-wild-MaxZ: "250"
+warps-version: 1.1
 ...

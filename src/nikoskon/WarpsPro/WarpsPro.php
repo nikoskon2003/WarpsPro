@@ -34,146 +34,77 @@ class WarpsPro extends PluginBase
     public function WarpID($name)
     {
         $data = $this->warps->getAll();
-
         for($i = 0; $i < count($data) + 1; $i++)
-        {
             if(isset($data[$i]))
-            {
                 if($data[$i]["name"] == $name)
-                {
                     return $i;
-                }
-            }     
-        }   
         return -1;
     }
 
     public function onCommand(CommandSender $sender, Command $cmd, string $label, array $args) : bool
     {
-        switch($cmd->getName())
+        if($cmd->getName() != 'warp' && $cmd->getname() != 'warps') return true;
+
+        if(count($args) == 0)
         {
-            case 'warp':
-                if (!$sender->hasPermission("warpspro.command.warp"))
-                {
-                    $sender->sendMessage("§cYou don't have permission.");
-                    return true;
-                }
-                if ($sender instanceof Player)
-                {
-                    if (count($args) == 0)
+            if (!$sender->hasPermission("warpspro.command.warp"))
+            {
+                $sender->sendMessage("§cYou don't have permission.");
+                return true;
+            }
+
+            if ($sender instanceof Player)
+            {
+                $warp_list = "";
+                $data = $this->warps->getAll();
+
+                for($i = 0; $i < count($data) + 1; $i++)
+                    if(isset($data[$i]) && ($sender->hasPermission("warpspro.command.warp." . $data[$i]["name"]) || $data[$i]["open"]))
+                        $warp_list .= '§a[§f' . $data[$i]["name"] . '§r§a]';
+                
+                if($warp_list != "") $sender->sendMessage("§fWarps: " . $warp_list);
+                else $sender->sendMessage("§cThis server has no warps.");            
+            } 
+            else
+            {
+                $warp_list = "";
+                $data = $this->warps->getAll();
+
+                for($i = 0; $i < count($data) + 1; $i++)
+                    if(isset($data[$i]))
+                        $warp_list .= '§a[§f' . $data[$i]["name"] . '§r§a]';
+                
+                if($warp_list != "")$sender->sendMessage("§fWarps: " . $warp_list);
+                else$sender->sendMessage("§cThis server has no warps.");
+            }
+        }
+        else
+        {
+            switch($args[0])
+            {
+                case 'add':
+                case 'set':
+                    if (!$sender->hasPermission("warpspro.command.setwarp")) 
                     {
-                        $warp_list = null;
-                        $data = $this->warps->getAll();
-
-                        for($i = 0; $i < count($data) + 1; $i++)
-                        {
-                            if(isset($data[$i]) && $sender->hasPermission("warpspro.command.warp." . $data[$i]["name"]))
-                            {
-                                $warp_list .= '§a[§f' . $data[$i]["name"] . '§a]';
-                            }
-                        }
-
-                        if($warp_list != null)
-                        {
-                            $sender->sendMessage("§fWarps: " . $warp_list);
-                            return true;
-                        }
-                        else
-                        {
-                            $sender->sendMessage("§cThis server has no warps.");
-                            return true;
-                        }
+                        $sender->sendMessage("§cYou don't have permission.");
+                        return true;
                     }
-                    else
+                    if ($sender instanceof Player)
                     {
-                        $this->warp_name = $args[0];
-                        $this->warp_id = $this->WarpID($this->warp_name);
-                        $data = $this->warps->getAll();
-
-                        if($this->warp_id <= -1)
+                        if(count($args) != 2)
                         {
-                            $sender->sendMessage("§cThere is no warp by that name listed.");
-							return true;
-                        }
-                        if(isset($data[$this->warp_id]))
-                        {
-                            if(!$sender->hasPermission("warpspro.command.warp." . $this->warp_name))
-                            {
-                                $sender->sendMessage("§cYou don't have permission to warp to " . $this->warp_name . "§c!");
-                                return true;
-                            }
-
-                            if(Server::getInstance()->loadLevel($data[$this->warp_id]["world"]) != false)
-                            {
-                                $curr_world = Server::getInstance()->getLevelByName($data[$this->warp_id]["world"]);
-                                $pos = new Position(
-                                    $data[$this->warp_id]["x"],
-                                    $data[$this->warp_id]["y"],
-                                    $data[$this->warp_id]["z"], $curr_world
-                                );
-
-                                $sender->sendMessage("§aYou warped to:§f " . $this->warp_name);
-                                $sender->teleport($pos);
-                                return true;
-                            }
-                            else
-                            {
-                                $sender->sendMessage("§cCould not load chunk.§f It's not safe to teleport there.");
-                                return true;
-                            }
-                        }
-                        else
-                        {
-							$sender->sendMessage("§cThere is no warp by that name listed.");
-							return true;
-						}
-                    }
-                } 
-                else
-                {
-					if (count($args) == 0)
-                    {
-                        $warp_list = null;
-                        $data = $this->warps->getAll();
- 
-                        for($i = 0; $i < count($data) + 1; $i++)
-                        {
-                            if(isset($data[$i]))
-                            {
-                                $warp_list .= '§a[§f' . $data[$i]["name"] . '§a]';
-                            }
-                        }
-                            
-                        if($warp_list != null)
-                        {
-                            $sender->sendMessage("§fWarps: " . $warp_list);
+                            $sender->sendMessage("§cInvalid usage!");
                             return true;
                         }
-                        else
+
+                        if($args[1] == 'add' || $args[1] == 'set' || $args[1] == 'del' || $args[1] == 'edit')
                         {
-                            $sender->sendMessage("§cThis server has no warps.");
+                            $sender->sendMessage("§cWarps cannot be named: §4add§c, §4set§c, §4del §cnor §4edit§c!");
                             return true;
                         }
-                    }
-                    else
-                    {
-						$sender->sendMessage("§cThis command can only be used in-game.");
-						return true;
-					}
-                }
-                break;
-            case 'setwarp':
-                if (!$sender->hasPermission("warpspro.command.setwarp")) 
-                {
-                    $sender->sendMessage("§cYou don't have permission.");
-                    return true;
-                }
-                if ($sender instanceof Player)
-                {
-                    if((count($args) != 0) && (count($args) < 2))
-                    {
+
                         $data = $this->warps->getAll();
-                        if($this->WarpID($args[0]) > -1)
+                        if($this->WarpID($args[1]) > -1)
                         {
                             $sender->sendMessage("§cWarp already exists!");
                             return true;
@@ -181,7 +112,7 @@ class WarpsPro extends PluginBase
 
                         $this->player_cords = array('x' => $sender->getX(), 'y' => $sender->getY(), 'z' => $sender->getZ());
                         $this->world = $sender->getLevel()->getName();
-                        $this->warp_name = $args[0];
+                        $this->warp_name = $args[1];
                         $this->warp_id = count($data);
 
                         if(isset($data[$this->warp_id]))
@@ -189,7 +120,7 @@ class WarpsPro extends PluginBase
                             $this->warp_id++;
                             if(isset($data[$this->warp_id]))
                             {
-                                $sender->sendMessage("§cThere is a problem with §fwarps.yml§c. A manual reset must be made!");
+                                $sender->sendMessage("§cThere is a problem with §fwarps.yml§c. A manual fix must be made!");
                                 return true;
                             }
                         }
@@ -199,126 +130,193 @@ class WarpsPro extends PluginBase
                         $data[$this->warp_id]["y"] = $this->player_cords["y"];
                         $data[$this->warp_id]["z"] = $this->player_cords["z"];
                         $data[$this->warp_id]["name"] = $this->warp_name;
+                        $data[$this->warp_id]["open"] = true;
 
                         $this->warps->setAll($data);
                         $this->warps->save();
 
-                        $sender->sendMessage("§aWarp set as:§r " . $args[0]);
+                        $sender->sendMessage("§aWarp set as:§r " . $args[1]);
+                    }
+                    else $sender->sendMessage("§cThis command can only be used in-game.");
+                break;
+                case 'del':
+                    if (!$sender->hasPermission("warpspro.command.delwarp")) 
+                    {
+                        $sender->sendMessage("§cYou don't have permission.");
                         return true;
                     }
-                    else
+                    if(count($args) == 2)
                     {
-                        $sender->sendMessage("§cINVALID USAGE:");
-                        return false;
+                        $data = $this->warps->getAll();
+                        $this->warp_name = $args[1];
+                        $this->warp_id = $this->WarpID($this->warp_name);
+
+                        if($this->warp_id < 0)
+                        {
+                            $sender->sendMessage("§cThere is no warp by that name listed.");
+                            return true;
+                        }
+                        
+                        if(isset($data[$this->warp_id]))
+                        {
+                            unset($data[$this->warp_id]);
+
+                            $rtarray = [];
+
+                            for($i = 0; $i < count($data) + count($data); $i++)
+                                if(isset($data[$i]))
+                                    $rtarray[] = $data[$i];
+                                
+                            $this->warps->setAll($rtarray);
+                            $this->warps->save();
+
+                            $sender->sendMessage("§aWarp [§f" . $this->warp_name . "§r§a] has been deleted.");
+                        }
+                        else $sender->sendMessage("§cThere is no warp by that name listed.");
                     }
-                }
-                else
-                {
-                    $sender->sendMessage("§cThis command can only be used in-game.");
-                    return true;
-                }
+                    else $sender->sendMessage("§cINVALID USAGE!");
                 break;
-            case 'delwarp':
-                if (!$sender->hasPermission("warpspro.command.delwarp")) 
-                {
-                    $sender->sendMessage("§cYou don't have permission.");
-                    return true;
-                }
-                if((count($args) != 0) && (count($args) < 2))
-                {
+                case 'edit':
+					// /warp edit <warp name> <action> [state]
+                    // /warp edit <name> open <true/false>
+                    // /warp edit <name> pos
+                    // /warp edit <name> name <new name>
+                    if (!$sender->hasPermission("warpspro.command.edit")) 
+                    {
+                        $sender->sendMessage("§cYou don't have permission.");
+                        return true;
+                    }
+
+                    if(count($args) < 3)
+                    {
+                        $sender->sendMessage("§cInvalid usage!");
+                        return true;
+                    }
+
                     $data = $this->warps->getAll();
-                    $this->warp_name = $args[0];
+                    $this->warp_name = $args[1];
                     $this->warp_id = $this->WarpID($this->warp_name);
 
-                    if($this->warp_id <= -1)
+                    if($this->warp_id < 0)
                     {
                         $sender->sendMessage("§cThere is no warp by that name listed.");
                         return true;
                     }
-                    
-                    if(isset($data[$this->warp_id]))
+
+                    switch(strtolower($args[2]))
                     {
-                        unset($data[$this->warp_id]);
-
-                        $rtarray = [];
-
-                        for($i = 0; $i < count($data) + count($data); $i++)
-                        {
-                            if(isset($data[$i])){
-                                $rtarray[] = $data[$i];
+                        case "open":
+                            if(count($args) == 3)
+                            {
+                                $sender->sendMessage("Warp open status: " . var_export($data[$this->warp_id]["open"], true));
+                                return true;
                             }
-                        }
-                        $this->warps->setAll($rtarray);
-                        $this->warps->save();
+                            
+                            switch(strtolower($args[3]))
+                            {
+                                case "true":
+                                case "t":
+                                case "yes":
+                                case "y":
+                                    $data[$this->warp_id]["open"] = true;
+                                    $this->warps->setAll($data);
+                                    $this->warps->save();
+                                    $sender->sendMessage("§aWarp is now open to everyone.");
+                                break;
+                                case "false":
+                                case "f":
+                                case "no":
+                                case "n":
+                                    $data[$this->warp_id]["open"] = false;
+                                    $this->warps->setAll($data);
+                                    $this->warps->save();
+                                    $sender->sendMessage("§aWarp is now closed for players without permission.");
+                                break;
+                                default:
+                                    $sender->sendMessage("§cWarp open state can be either §4true §cor §4false§c!");
+                                break;
+                            }
+                        break;
+                        case "pos":
+                            if ($sender instanceof Player)
+                            {
+                                $this->player_cords = array('x' => $sender->getX(), 'y' => $sender->getY(), 'z' => $sender->getZ());
+                                $this->world = $sender->getLevel()->getName();
+                                
+                                $data[$this->warp_id]["world"] = $this->world;
+                                $data[$this->warp_id]["x"] = $this->player_cords["x"];
+                                $data[$this->warp_id]["y"] = $this->player_cords["y"];
+                                $data[$this->warp_id]["z"] = $this->player_cords["z"];
 
-                        $sender->sendMessage("§aWarp [§f" . $this->warp_name . "§r§a] has been deleted.");
-                        return true;
+                                $this->warps->setAll($data);
+                                $this->warps->save();
+
+                                $sender->sendMessage("§aWarp position updated to current location");
+                            }
+                            else $sender->sendMessage("§cThis command can only be used in-game.");
+                            
+                        break;
+                        case "name":
+                            if(count($args) < 3)
+                            {
+                                $sender->sendMessage("§cWarp name cannot be empty");
+                                return true;
+                            }
+                            if($this->WarpID($args[3]) > 0)
+                            {
+                                $sender->sendMessage("§cWarp with that name already exists!");
+                                return true;
+                            }
+
+                            $data[$this->warp_id]["name"] = $args[3];
+                            $this->warps->setAll($data);
+                            $this->warps->save();
+
+                            $sender->sendMessage("§aWarp name updated to: §r" . $args[3]);
+                        break;
                     }
-                    else
-                    {
-                        $sender->sendMessage("§cThere is no warp by that name listed.");
-                        return true;
-                    }
-                }
-                else
-                {
-                    $sender->sendMessage("§cINVALID USAGE!");
-                    return false;
-                }
                 break;
-            case 'wild':
-                if($this->enable_wild === "true")
-                {
-                    if (!$sender->hasPermission("warpspro.command.wild")) 
-                    {
-						$sender->sendMessage("§cYou don't have permission.");
-						return true;
-					}
+                default:
 					if ($sender instanceof Player)
 					{
-						$this->world = $sender->getLevel()->getName();
-						foreach($this->getServer()->getLevels() as $aval_world => $curr_world)
+						$this->warp_name = $args[0];
+						$this->warp_id = $this->WarpID($this->warp_name);
+						$data = $this->warps->getAll();
+
+						if($this->warp_id <= -1)
 						{
-							if ($this->world == $curr_world->getName())
-							{
-								$pos = $sender->getLevel()->getSafeSpawn(new Vector3(rand('-'.$this->config->get("wild-MaxX"), $this->config->get("wild-MaxX")),rand(1,256),rand('-'.$this->config->get("wild-MaxZ"), $this->config->get("wild-MaxZ"))));
-									$pos->getLevel()->loadChunk($pos->getX(),$pos->getZ());
-									$pos->getLevel()->getChunk($pos->getX(),$pos->getZ(),true);
-									$pos = $pos->getLevel()->getSafeSpawn(new Vector3($pos->getX(),rand(1,256),$pos->getZ()));
-								if($pos->getLevel()->isChunkLoaded($pos->getX(),$pos->getZ()))
-								{
-									$sender->teleport($pos);
-									$sender->sendMessage("§aTeleported you somewhere in the wild.");
-									return true;
-								}
-								else
-								{
-									$sender->sendMessage("§cCould not load chunk. §fIt isn't safe to teleport there.");
-									return true;
-								}
-
-							}
+							$sender->sendMessage("§cThere is no warp by that name listed.");
+							return true;
 						}
+						if(isset($data[$this->warp_id]))
+						{
+							if(!$sender->hasPermission("warpspro.command.warp." . $data[$this->warp_id]["name"]) && !$data[$this->warp_id]["open"])
+							{
+								$sender->sendMessage("§cYou don't have permission to warp to " . $this->warp_name . "§r§c!");
+								return true;
+							}
 
-					}
-					else
-					{
-						$sender->sendMessage("§cThis command can only be used in-game.");
-						return true;
-					}
-				}
-				else
-				{
-					$sender->sendMessage("§f/wild §cis not enabled in this Server!");
-					return true;
-				}
-				break;
-				
-            default:
-                return false;
-            break;
+							if(Server::getInstance()->loadLevel($data[$this->warp_id]["world"]) != false)
+							{
+								$curr_world = Server::getInstance()->getLevelByName($data[$this->warp_id]["world"]);
+								$pos = new Position(
+									$data[$this->warp_id]["x"],
+									$data[$this->warp_id]["y"],
+									$data[$this->warp_id]["z"], $curr_world
+								);
+
+								$sender->sendMessage("§aYou warped to:§f " . $this->warp_name);
+								$sender->teleport($pos);
+							}
+							else $sender->sendMessage("§cCould not load chunk.§f It's not safe to teleport there.");
+						}
+						else $sender->sendMessage("§cThere is no warp by that name listed.");
+					}else $sender->sendMessage("§cThis command can only be used in-game.");
+                break;
+            }
         }
-        return false;
+		
+		return true;
     }
 
     public function check_config()
@@ -327,9 +325,7 @@ class WarpsPro extends PluginBase
 
         $defaults = [
             "plugin-name" => "WarpsPro",
-            "enable-wild-command" => false,
-            "wild-MaxX" => 250,
-            "wild-MaxZ" => 250
+            "warps-version" => 1.1
         ];
 
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML, $defaults);
@@ -344,7 +340,20 @@ class WarpsPro extends PluginBase
         $this->warps = new Config($this->getDataFolder() . "warps.yml", Config::YAML);
         $this->check_config();
 
-		$this->enable_wild = $this->config->get("enable-wild-command");
+        $this->UpdateWarps();
+    }
+
+    public function UpdateWarps()
+    {
+        $data = $this->warps->getAll();
+
+        for($i = 0; $i < count($data) + 1; $i++)
+            if(isset($data[$i]))
+                if(!isset($data[$i]["open"]))
+                    $data[$i]["open"] = true;
+
+        $this->warps->setAll($data);
+        $this->warps->save();
     }
 
     public function onDisable()

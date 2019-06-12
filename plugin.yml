@@ -1,25 +1,17 @@
 name: WarpsPro
 main: nikoskon\WarpsPro\WarpsPro
 author: nikoskon
-version: 1.2.1
+version: 1.3.0
 api: [3.0.0]
 commands:
- wild:
-  description: Teleport to a random location in the world.
-  usage: "/wild"
-  permission: warpspro.command.wild
  warp:
-  description: Warps you to a location. /warp will list all warps. /warp <warpname> will teleport you.
+  description: "Main warp command"
   usage: "/warp or /warp <warpname>"
   permission: warpspro.command.warp
- setwarp:
-  description: Sets a warp on current location.
-  usage: "/setwarp <warpname>"
-  permission: warpspro.command.setwarp
- delwarp:
-  description: Delete a warp.
-  usage: "/delwarp <warpname>"
-  permission: warpspro.command.delwarp
+ warps:
+  description: "Main warp command"
+  usage: "/warps or /warps <warpname>"
+  permission: warpspro.command.warp
   
 permissions:
  warpspro.*:
@@ -32,9 +24,9 @@ permissions:
      warpspro.command.setwarp:
       description: "Allows player to set warps"
       default: op
+     warpspro.command.edit:
+      description: "Allows player to edit warps"
+      default: op
      warpspro.command.warp:
-      description: "Allows player use warps"
-      default: true
-     warpspro.command.wild:
-      description: "Allows player to use wild command"
+      description: "Allows player to use warps"
       default: true
